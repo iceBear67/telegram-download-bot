@@ -22,18 +22,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 async def downloader(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Downloading!")
-    document = update.message.document
-    file = await context.bot.get_file(document)
-    await update.message.reply_text(f"File {document.file_name} downloaded.\nNow moving.")
-    move(file.file_path.lstrip(TOKEN),f"{OUTPUT_DIR}{document.file_name}")
-    await update.message.reply_text(f"File moved.\nLocation: {OUTPUT_DIR}{document.file_name}")
-
+    document = update.message.document or update.message.video or update.message.photo or update.message.video_note
+    if document:
+        await update.message.reply_text("Downloading!")
+    else:
+        await update.message.reply_text("Invalid media!")
+        return
+    file = await context.bot.get_file(document.file_id)
+    out_path = OUTPUT_DIR + document.file_name
+    await file.download_to_drive(out_path)
+    await update.message.reply_text(f"File {document.file_name} downloaded to {out_path}")
 
 def main() -> None:
-    application = Application.builder().token(TOKEN).base_url(BASE_URL).base_file_url("").read_timeout(864000).build()
+    application = Application.builder().token(TOKEN).base_url(BASE_URL)
+    if "localhost" in BASE_URL:
+        application.base_file_url("")
+    application = application.read_timeout(864000).build()
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.Document.ALL, downloader))
+    application.add_handler(MessageHandler(filters.ALL, downloader))
     application.run_polling()
 
 
