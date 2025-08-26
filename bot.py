@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from shutil import move
 
@@ -30,7 +31,7 @@ async def downloader(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
     file = await context.bot.get_file(document.file_id)
     out_path = OUTPUT_DIR + document.file_name
-    await file.download_to_drive(out_path)
+    asyncio.run(file.download_to_drive(out_path))
     await update.message.reply_text(f"File {document.file_name} downloaded to {out_path}")
 
 def main() -> None:
